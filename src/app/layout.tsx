@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
-import TopBar from "@/components/TopBar";
+import Sidebar from "@/components/Sidebar";
 
 const ibmPlex = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -22,8 +22,8 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={ibmPlex.variable}>
-        <TopBar />
-        <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
+        <Sidebar />
+        <main className="ml-64 min-h-screen p-8">{children}</main>
       </body>
     </html>
   );
