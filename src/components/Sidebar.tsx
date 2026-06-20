@@ -6,6 +6,7 @@ import Logo from "./Logo";
 import {
   LayoutDashboard,
   Package,
+  PackagePlus,
   FileText,
   Users,
   Truck,
@@ -18,6 +19,7 @@ import {
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inventario", label: "Inventario", icon: Package },
+   { href: "/entradas", label: "Entradas", icon: PackagePlus },
   { href: "/documentos", label: "Documentos", icon: FileText },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/proveedores", label: "Proveedores", icon: Truck },
