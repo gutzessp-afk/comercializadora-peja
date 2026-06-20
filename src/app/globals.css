@@ -21,3 +21,33 @@ body {
   color: #1a2227;
   font-family: var(--font-ibm-plex), system-ui, sans-serif;
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .doc-hoja,
+  .doc-hoja * {
+    visibility: visible;
+  }
+  .doc-hoja {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  aside {
+    display: none !important;
+  }
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  @page {
+    size: letter;
+    margin: 1cm;
+  }
+}

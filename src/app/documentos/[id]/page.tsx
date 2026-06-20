@@ -6,10 +6,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 const TIPO_TITULO: Record<string, string> = {
-  cotizacion: "COTIZACION",
+  cotizacion: "COTIZACIÓN",
   nota: "NOTA DE VENTA",
-  remision: "REMISION",
+  remision: "REMISIÓN",
 };
+
+const FILAS_FIJAS = 16;
 
 export default async function DocumentoPage({
   params,
@@ -35,15 +37,16 @@ export default async function DocumentoPage({
   const cliente = Array.isArray(doc.clientes) ? doc.clientes[0] : doc.clientes;
 
   const fmt = (n: number) =>
-    Number(n).toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+    Number(n).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const fecha = new Date(doc.fecha).toLocaleDateString("es-MX", {
     day: "2-digit",
-    month: "long",
+    month: "2-digit",
     year: "numeric",
   });
 
-  const saldo = Number(doc.total) - Number(doc.monto_pagado);
+  const partidas = items ?? [];
+  const vacias = Math.max(0, FILAS_FIJAS - partidas.length);
   const esCotizacion = doc.tipo === "cotizacion";
 
   return (
@@ -59,123 +62,153 @@ export default async function DocumentoPage({
         <BotonImprimir />
       </div>
 
-      {/* HOJA DEL DOCUMENTO */}
-      <div className="mx-auto max-w-3xl bg-white p-10 shadow-sm print:max-w-none print:p-0 print:shadow-none">
-        {/* Encabezado */}
-        <div className="flex items-start justify-between border-b-2 border-[var(--peja-azul)] pb-5">
-          <div className="flex items-center gap-3">
-            <Logo size={56} />
+      {/* HOJA - replica de la plantilla Excel */}
+      <div className="doc-hoja mx-auto max-w-3xl bg-white p-8 shadow-sm print:max-w-none print:p-0 print:shadow-none">
+        {/* ENCABEZADO */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3">
+            <Logo size={60} />
             <div>
-              <div className="text-xl font-bold text-[var(--peja-azul)]">
-                {NEGOCIO.razonSocial}
+              <div className="text-2xl font-bold leading-tight">
+                <span className="text-[var(--peja-azul)]">COMERCIALIZADORA</span>{" "}
+                <span className="text-[var(--peja-pizarra)]">PEJA</span>
               </div>
-              <div className="text-xs text-[var(--peja-pizarra)]">Tlapaleria y Ferreteria</div>
-              <div className="mt-1 text-xs text-gray-600">{NEGOCIO.direccion}</div>
-              <div className="text-xs text-gray-600">
-                Tel: {NEGOCIO.telefono} · {NEGOCIO.correo}
+              <div className="text-[10px] font-bold tracking-wider text-[#78909C]">
+                PLOMERÍA · TLAPALERÍA · FERRETERÍA
               </div>
-              <div className="text-xs text-gray-600">RFC: {NEGOCIO.rfc}</div>
+              <div className="mt-1 max-w-xs text-[10px] text-gray-500">
+                Compra, venta y distribución de material y accesorios de tlapalería y
+                plomería en general.
+              </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-lg font-bold text-[var(--peja-azul)]">
+            <div className="rounded bg-[var(--peja-azul)] px-5 py-2 text-sm font-bold text-white">
               {TIPO_TITULO[doc.tipo] ?? doc.tipo}
             </div>
-            <div className="mt-1 text-sm font-semibold">{doc.folio}</div>
-            <div className="text-xs text-gray-600">{fecha}</div>
-          </div>
-        </div>
-
-        {/* Cliente */}
-        <div className="mt-5 rounded-md bg-[var(--peja-neutro)] p-4 text-sm print:bg-gray-50">
-          <div className="mb-1 text-xs font-semibold uppercase text-[var(--peja-pizarra)]">
-            Cliente
-          </div>
-          {cliente ? (
-            <div>
-              <div className="font-semibold">{cliente.nombre}</div>
-              {cliente.empresa && <div className="text-gray-600">{cliente.empresa}</div>}
-              <div className="text-gray-600">
-                {[cliente.rfc && `RFC: ${cliente.rfc}`, cliente.telefono, cliente.ciudad]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </div>
+            <div className="mt-2 text-xs text-[var(--peja-pizarra)]">
+              Folio <span className="font-bold text-[var(--peja-azul)]">{doc.folio}</span>
             </div>
-          ) : (
-            <div className="font-semibold">Publico general</div>
-          )}
+          </div>
         </div>
 
-        {/* Partidas */}
-        <table className="mt-5 w-full text-sm">
+        {/* Direccion */}
+        <div className="my-3 border-t-2 border-[var(--peja-azul)] pt-2 text-center text-[10px] text-gray-500">
+          {NEGOCIO.direccion}, Col. Casco de San Juan · C.P. 56600 · Chalco, Estado de México
+        </div>
+
+        {/* CLIENTE + FECHA */}
+        <div className="mt-2 grid grid-cols-2 gap-3 text-xs">
+          <div className="rounded-md border border-[var(--peja-gris)] p-3">
+            <div className="mb-1">
+              <span className="font-bold text-[var(--peja-pizarra)]">CLIENTE: </span>
+              <span>{cliente?.nombre || "Público general"}</span>
+            </div>
+            <div>
+              <span className="font-bold text-[var(--peja-pizarra)]">TEL/CONTACTO: </span>
+              <span>{cliente?.telefono || ""}</span>
+            </div>
+          </div>
+          <div className="rounded-md border border-[var(--peja-gris)] p-3">
+            <div className="mb-1 flex justify-between">
+              <span className="font-bold text-[var(--peja-pizarra)]">FECHA:</span>
+              <span>{fecha}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-bold text-[var(--peja-pizarra)]">VIGENCIA:</span>
+              <span>15 DÍAS HÁB.</span>
+            </div>
+          </div>
+        </div>
+
+        {/* TABLA */}
+        <table className="mt-3 w-full border-collapse text-xs">
           <thead>
-            <tr className="border-b border-gray-300 text-left text-xs uppercase text-[var(--peja-pizarra)]">
-              <th className="py-2">Descripcion</th>
-              <th className="w-16 py-2 text-right">Cant.</th>
-              <th className="w-28 py-2 text-right">P. Unit.</th>
-              <th className="w-28 py-2 text-right">Importe</th>
+            <tr className="bg-[var(--peja-azul)] text-white">
+              <th className="border border-[var(--peja-azul)] px-1 py-1.5 text-center font-bold" style={{ width: "6%" }}>No.</th>
+              <th className="border border-[var(--peja-azul)] px-1 py-1.5 text-center font-bold" style={{ width: "12%" }}>CANTIDAD</th>
+              <th className="border border-[var(--peja-azul)] px-2 py-1.5 text-left font-bold">DESCRIPCIÓN DEL ARTÍCULO</th>
+              <th className="border border-[var(--peja-azul)] px-1 py-1.5 text-center font-bold" style={{ width: "15%" }}>P. UNITARIO</th>
+              <th className="border border-[var(--peja-azul)] px-1 py-1.5 text-center font-bold" style={{ width: "16%" }}>IMPORTE</th>
             </tr>
           </thead>
           <tbody>
-            {(items ?? []).map((it) => (
-              <tr key={it.id} className="border-b border-gray-100">
-                <td className="py-2">{it.descripcion}</td>
-                <td className="py-2 text-right">{Number(it.cantidad)}</td>
-                <td className="py-2 text-right">{fmt(it.precio_unitario)}</td>
-                <td className="py-2 text-right">{fmt(it.importe)}</td>
+            {partidas.map((it, i) => (
+              <tr key={it.id}>
+                <td className="border border-[var(--peja-gris)] px-1 py-1.5 text-center text-gray-500">{i + 1}</td>
+                <td className="border border-[var(--peja-gris)] px-1 py-1.5 text-center">{Number(it.cantidad)}</td>
+                <td className="border border-[var(--peja-gris)] px-2 py-1.5">{it.descripcion}</td>
+                <td className="border border-[var(--peja-gris)] px-2 py-1.5 text-right">{fmt(it.precio_unitario)}</td>
+                <td className="border border-[var(--peja-gris)] px-2 py-1.5 text-right">{fmt(it.importe)}</td>
+              </tr>
+            ))}
+            {Array.from({ length: vacias }).map((_, i) => (
+              <tr key={`v${i}`}>
+                <td className="border border-[var(--peja-gris)] px-1 py-1.5 text-center text-gray-400">{partidas.length + i + 1}</td>
+                <td className="border border-[var(--peja-gris)] px-1 py-1.5">&nbsp;</td>
+                <td className="border border-[var(--peja-gris)] px-2 py-1.5 text-gray-300">—</td>
+                <td className="border border-[var(--peja-gris)] px-2 py-1.5"></td>
+                <td className="border border-[var(--peja-gris)] px-2 py-1.5"></td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {/* Totales */}
-        <div className="mt-4 flex justify-end">
-          <div className="w-64 text-sm">
-            <div className="flex justify-between py-1">
-              <span className="text-gray-600">Subtotal</span>
-              <span>{fmt(doc.subtotal)}</span>
+        {/* OBSERVACIONES + TOTALES */}
+        <div className="mt-3 flex gap-3">
+          <div className="flex-1">
+            <div className="mb-1 text-[11px] font-bold text-[var(--peja-azul)]">OBSERVACIONES:</div>
+            <div className="whitespace-pre-line rounded-md border border-[var(--peja-gris)] p-3 text-[10px] text-gray-600">
+              {doc.notas || ""}
             </div>
-            {doc.aplica_iva && (
-              <div className="flex justify-between py-1">
-                <span className="text-gray-600">IVA 16%</span>
-                <span>{fmt(doc.iva)}</span>
-              </div>
-            )}
-            <div className="mt-1 flex justify-between border-t-2 border-[var(--peja-azul)] py-2 text-base font-bold text-[var(--peja-azul)]">
+          </div>
+          <div className="w-60 text-xs">
+            <div className="flex justify-between border-b border-gray-200 px-2 py-1.5">
+              <span className="font-semibold text-[var(--peja-pizarra)]">SUBTOTAL</span>
+              <span>${fmt(doc.subtotal)}</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-200 px-2 py-1.5">
+              <span className="font-semibold text-[var(--peja-pizarra)]">
+                DESCUENTO {Number(doc.descuento_pct) > 0 ? `(${Number(doc.descuento_pct)}%)` : ""}
+              </span>
+              <span className="text-red-600">-${fmt(doc.descuento_monto || 0)}</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-200 px-2 py-1.5">
+              <span className="font-semibold text-[var(--peja-pizarra)]">IVA (16%)</span>
+              <span>${fmt(doc.iva)}</span>
+            </div>
+            <div className="flex justify-between bg-[var(--peja-azul)] px-2 py-2 text-sm font-bold text-white">
               <span>TOTAL</span>
-              <span>{fmt(doc.total)}</span>
+              <span>${fmt(doc.total)}</span>
             </div>
             {!esCotizacion && (
               <>
-                <div className="flex justify-between py-1 text-green-700">
-                  <span>Pagado</span>
-                  <span>{fmt(doc.monto_pagado)}</span>
+                <div className="flex justify-between px-2 py-1 text-green-700">
+                  <span>PAGADO</span>
+                  <span>${fmt(doc.monto_pagado)}</span>
                 </div>
-                <div className="flex justify-between py-1 font-semibold text-red-600">
-                  <span>Saldo</span>
-                  <span>{fmt(saldo)}</span>
+                <div className="flex justify-between px-2 py-1 font-semibold text-red-600">
+                  <span>SALDO</span>
+                  <span>${fmt(Number(doc.total) - Number(doc.monto_pagado))}</span>
                 </div>
               </>
             )}
           </div>
         </div>
 
-        {/* Notas / vigencia */}
-        {doc.notas && (
-          <div className="mt-5 text-xs text-gray-600">
-            <span className="font-semibold">Notas: </span>
-            {doc.notas}
+        {/* FIRMAS */}
+        <div className="mt-10 grid grid-cols-2 gap-10 text-center text-[10px] text-[#78909C]">
+          <div>
+            <div className="mx-8 border-t border-gray-400 pt-1">ATENDIÓ</div>
           </div>
-        )}
-        {esCotizacion && (
-          <div className="mt-2 text-xs italic text-gray-500">
-            Cotizacion valida por 15 dias. Precios sujetos a cambio sin previo aviso.
+          <div>
+            <div className="mx-8 border-t border-gray-400 pt-1">AUTORIZADO POR</div>
           </div>
-        )}
+        </div>
 
-        {/* Pie */}
-        <div className="mt-10 border-t border-gray-200 pt-4 text-center text-xs text-gray-400">
-          {NEGOCIO.razonSocial} · Gracias por su preferencia
+        {/* PIE */}
+        <div className="mt-6 text-center text-[9px] text-gray-400">
+          COMERCIALIZADORA PEJA · Tel: {NEGOCIO.telefono} · Chalco, Estado de México
         </div>
       </div>
     </div>
