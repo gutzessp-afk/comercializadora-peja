@@ -14,7 +14,8 @@ export type DocumentoInput = {
   tipo: "cotizacion" | "nota" | "remision";
   cliente_id: number | null;
   aplica_iva: boolean;
-  notas?: string;
+  descuento_pct: number;
+  notas: string;
   partidas: Partida[];
 };
 
@@ -25,18 +26,22 @@ const PREFIJO: Record<string, string> = {
 };
 
 async function siguienteFolio(tipo: string) {
+  const prefijo = PREFIJO[tipo] ?? "DOC";
   const { count } = await supabaseAdmin
     .from("documentos")
-    .select("*", { count: "exact", head: true })
+    .select("id", { count: "exact", head: true })
     .eq("tipo", tipo);
   const num = (count ?? 0) + 1;
-  return `${PREFIJO[tipo]}-${String(num).padStart(4, "0")}`;
+  return `${prefijo}-${String(num).padStart(4, "0")}`;
 }
 
 export async function crearDocumento(data: DocumentoInput) {
   const subtotal = data.partidas.reduce((s, p) => s + p.importe, 0);
-  const iva = data.aplica_iva ? subtotal * 0.16 : 0;
-  const total = subtotal + iva;
+  const descuentoMonto = subtotal * (data.descuento_pct / 100);
+  const base = subtotal - descuentoMonto;
+  const iva = data.aplica_iva ? base * 0.16 : 0;
+  const total = base + iva;
+
   const folio = await siguienteFolio(data.tipo);
 
   const { data: doc, error } = await supabaseAdmin
@@ -46,17 +51,22 @@ export async function crearDocumento(data: DocumentoInput) {
       folio,
       cliente_id: data.cliente_id,
       subtotal,
+      descuento_pct: data.descuento_pct,
+      descuento_monto: descuentoMonto,
       aplica_iva: data.aplica_iva,
       iva,
       total,
-      notas: data.notas ?? null,
+      estado: "vigente",
+      notas: data.notas,
+      monto_pagado: 0,
+      estado_pago: data.tipo === "cotizacion" ? "n/a" : "pendiente",
     })
     .select("id")
     .single();
 
-  if (error || !doc) return { ok: false, error: error?.message ?? "Error" };
+  if (error) return { ok: false, error: error.message };
 
-  const items = data.partidas.map((p) => ({
+  const itemsInsert = data.partidas.map((p) => ({
     documento_id: doc.id,
     descripcion: p.descripcion,
     cantidad: p.cantidad,
@@ -66,20 +76,10 @@ export async function crearDocumento(data: DocumentoInput) {
 
   const { error: errItems } = await supabaseAdmin
     .from("documento_items")
-    .insert(items);
+    .insert(itemsInsert);
 
   if (errItems) return { ok: false, error: errItems.message };
 
   revalidatePath("/documentos");
-  return { ok: true, id: doc.id, folio };
-}
-
-export async function eliminarDocumento(id: number) {
-  const { error } = await supabaseAdmin
-    .from("documentos")
-    .delete()
-    .eq("id", id);
-  if (error) return { ok: false, error: error.message };
-  revalidatePath("/documentos");
-  return { ok: true };
+  return { ok: true, id: doc.id };
 }

@@ -2,6 +2,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { NEGOCIO } from "@/lib/negocio";
 import Logo from "@/components/Logo";
 import BotonImprimir from "./BotonImprimir";
+import QrFacturacion from "./QrFacturacion";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -48,6 +49,7 @@ export default async function DocumentoPage({
   const partidas = items ?? [];
   const vacias = Math.max(0, FILAS_FIJAS - partidas.length);
   const esCotizacion = doc.tipo === "cotizacion";
+  const nombreCliente = cliente?.nombre || "Público general";
 
   return (
     <div>
@@ -62,7 +64,7 @@ export default async function DocumentoPage({
         <BotonImprimir />
       </div>
 
-      {/* HOJA - replica de la plantilla Excel */}
+      {/* HOJA */}
       <div className="doc-hoja mx-auto max-w-3xl bg-white p-8 shadow-sm print:max-w-none print:p-0 print:shadow-none">
         {/* ENCABEZADO */}
         <div className="flex items-start justify-between">
@@ -102,7 +104,7 @@ export default async function DocumentoPage({
           <div className="rounded-md border border-[var(--peja-gris)] p-3">
             <div className="mb-1">
               <span className="font-bold text-[var(--peja-pizarra)]">CLIENTE: </span>
-              <span>{cliente?.nombre || "Público general"}</span>
+              <span>{nombreCliente}</span>
             </div>
             <div>
               <span className="font-bold text-[var(--peja-pizarra)]">TEL/CONTACTO: </span>
@@ -160,6 +162,10 @@ export default async function DocumentoPage({
             <div className="mb-1 text-[11px] font-bold text-[var(--peja-azul)]">OBSERVACIONES:</div>
             <div className="whitespace-pre-line rounded-md border border-[var(--peja-gris)] p-3 text-[10px] text-gray-600">
               {doc.notas || ""}
+            </div>
+            {/* QR de facturacion */}
+            <div className="mt-3">
+              <QrFacturacion folio={doc.folio} total={Number(doc.total)} cliente={nombreCliente} />
             </div>
           </div>
           <div className="w-60 text-xs">

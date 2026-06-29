@@ -12,6 +12,11 @@ export default async function NuevaEntradaPage() {
     .select("id, codigo, nombre")
     .order("nombre");
 
+  const { data: categorias } = await supabaseAdmin
+    .from("categorias")
+    .select("id, nombre")
+    .order("nombre");
+
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold text-[var(--peja-azul)]">Nueva entrada de material</h1>
@@ -21,6 +26,7 @@ export default async function NuevaEntradaPage() {
       <EntradaEditor
         proveedores={proveedores ?? []}
         productos={productos ?? []}
+        categorias={categorias ?? []}
       />
     </div>
   );

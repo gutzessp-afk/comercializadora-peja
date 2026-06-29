@@ -4,18 +4,24 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { crearEntrada, type EntradaItem } from "../actions";
 import SubirPdf from "./SubirPdf";
+import ProductoRapido from "./ProductoRapido";
 
 type Proveedor = { id: number; nombre: string };
 type Producto = { id: number; codigo: string; nombre: string };
+type Categoria = { id: number; nombre: string };
 
 export default function EntradaEditor({
   proveedores,
-  productos,
+  productos: productosIniciales,
+  categorias,
 }: {
   proveedores: Proveedor[];
   productos: Producto[];
+  categorias: Categoria[];
 }) {
   const router = useRouter();
+  const [productos, setProductos] = useState<Producto[]>(productosIniciales);
+  const [prodRapido, setProdRapido] = useState(false);
   const [proveedorId, setProveedorId] = useState<number | null>(null);
   const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -162,12 +168,20 @@ export default function EntradaEditor({
           </tbody>
         </table>
         <div className="flex items-center justify-between border-t border-[var(--peja-gris)] p-3">
-          <button
-            onClick={agregar}
-            className="rounded-md px-3 py-1.5 text-sm font-medium text-[var(--peja-azul)] hover:bg-[var(--peja-neutro)]"
-          >
-            + Agregar producto
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={agregar}
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-[var(--peja-azul)] hover:bg-[var(--peja-neutro)]"
+            >
+              + Agregar linea
+            </button>
+            <button
+              onClick={() => setProdRapido(true)}
+              className="rounded-md border border-[var(--peja-azul)] px-3 py-1.5 text-sm font-medium text-[var(--peja-azul)] hover:bg-[var(--peja-neutro)]"
+            >
+              + Producto nuevo
+            </button>
+          </div>
           <div className="text-sm font-bold text-[var(--peja-azul)]">Total: {fmt(total)}</div>
         </div>
       </div>
@@ -197,6 +211,19 @@ export default function EntradaEditor({
           {guardando ? "Guardando..." : "Registrar entrada y sumar al inventario"}
         </button>
       </div>
+
+      {prodRapido && (
+        <ProductoRapido
+          categorias={categorias}
+          onClose={() => setProdRapido(false)}
+          onCreado={(prod) => {
+            setProductos((prev) =>
+              [...prev, prod].sort((a, b) => a.nombre.localeCompare(b.nombre))
+            );
+            setProdRapido(false);
+          }}
+        />
+      )}
     </div>
   );
 }

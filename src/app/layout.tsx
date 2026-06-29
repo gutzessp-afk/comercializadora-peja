@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import LayoutClient from "@/components/LayoutClient";
+import { getUsuarioActual } from "@/lib/auth";
 
 const ibmPlex = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -14,11 +15,17 @@ export const metadata: Metadata = {
   description: "Sistema de gestion - Tlapaleria y Ferreteria",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const usuario = await getUsuarioActual();
+
   return (
     <html lang="es">
       <body className={ibmPlex.variable}>
-        <LayoutClient>{children}</LayoutClient>
+        <LayoutClient usuario={usuario}>{children}</LayoutClient>
       </body>
     </html>
   );

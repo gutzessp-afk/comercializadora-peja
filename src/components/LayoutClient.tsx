@@ -3,7 +3,15 @@
 import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
 
-export default function LayoutClient({ children }: { children: React.ReactNode }) {
+type Usuario = { nombre: string; email?: string; rol: "admin" | "usuario" } | null;
+
+export default function LayoutClient({
+  children,
+  usuario,
+}: {
+  children: React.ReactNode;
+  usuario: Usuario;
+}) {
   const pathname = usePathname();
   const esLogin = pathname === "/login";
 
@@ -13,7 +21,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
   return (
     <>
-      <Sidebar />
+      <Sidebar usuario={usuario} />
       <main className="ml-64 min-h-screen p-8">{children}</main>
     </>
   );

@@ -19,10 +19,14 @@ export type ProductoInput = {
 };
 
 export async function crearProducto(data: ProductoInput) {
-  const { error } = await supabaseAdmin.from("productos").insert(data);
+  const { data: nuevo, error } = await supabaseAdmin
+    .from("productos")
+    .insert(data)
+    .select("id")
+    .single();
   if (error) return { ok: false, error: error.message };
   revalidatePath("/inventario");
-  return { ok: true };
+  return { ok: true, id: nuevo.id };
 }
 
 export async function actualizarProducto(id: number, data: Partial<ProductoInput>) {
